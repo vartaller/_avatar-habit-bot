@@ -1,0 +1,13 @@
+# ── Bot ───────────────────────────────────────────────────────────────────────
+aiogram>=3.13
+asyncpg>=0.29
+apscheduler>=3.10
+pydantic-settings>=2.0
+python-dotenv>=1.0
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+streamlit>=1.40
+plotly>=5.24
+pandas>=2.2
+psycopg2-binary>=2.9
+sqlalchemy>=2.0

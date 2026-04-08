@@ -1,0 +1,19 @@
+# fly.toml — Telegram Bot (polling, no HTTP)
+# Deploy: fly deploy
+# Secrets: fly secrets set BOT_TOKEN=... DATABASE_URL=... OWNER_ID=...
+
+app = "avatar-habit-bot"
+primary_region = "ams"
+
+[build]
+
+[env]
+  REMINDER_HOUR   = "23"
+  REMINDER_MINUTE = "0"
+
+# No [[services]] block — polling bots don't expose any port.
+
+[[vm]]
+  memory   = "256mb"
+  cpu_kind = "shared"
+  cpus     = 1
