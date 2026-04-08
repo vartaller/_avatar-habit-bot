@@ -41,9 +41,20 @@ async def _start_logging(
     state: FSMContext,
     event: Message | CallbackQuery,
 ) -> None:
-    habits = await db.get_unfilled_habits(log_date)
     date_str = log_date.strftime("%d.%m.%Y")
 
+    # Check if any habits exist at all
+    all_active = await db.get_active_habits()
+    if not all_active:
+        text = "У тебя ещё нет привычек. Добавь первую: /add_habit"
+        if isinstance(event, CallbackQuery):
+            await event.message.edit_text(text)
+        else:
+            await event.answer(text)
+        await state.clear()
+        return
+
+    habits = await db.get_unfilled_habits(log_date)
     if not habits:
         text = f"✅ Все привычки на {date_str} уже заполнены!"
         if isinstance(event, CallbackQuery):
