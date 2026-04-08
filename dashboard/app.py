@@ -21,9 +21,12 @@ st.set_page_config(
 @st.cache_resource
 def get_engine():
     url = os.environ["DATABASE_URL"]
-    # sqlalchemy needs +psycopg2 driver hint
     url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
-    return create_engine(url, pool_pre_ping=True)
+    return create_engine(
+        url,
+        pool_pre_ping=True,
+        connect_args={"sslmode": "require"},
+    )
 
 
 @st.cache_data(ttl=60)
