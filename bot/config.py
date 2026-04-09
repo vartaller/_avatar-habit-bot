@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     OWNER_ID: int       # Your Telegram numeric user ID
     REMINDER_HOUR: int = 23
     REMINDER_MINUTE: int = 0
+    TIMEZONE: str = "Europe/Warsaw"
 
     class Config:
         env_file = ".env"
