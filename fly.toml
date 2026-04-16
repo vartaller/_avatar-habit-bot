@@ -10,6 +10,7 @@ primary_region = "ams"
 [env]
   REMINDER_HOUR   = "23"
   REMINDER_MINUTE = "0"
+  TIMEZONE        = "Europe/Warsaw"
 
 # No [[services]] block — polling bots don't expose any port.
 
