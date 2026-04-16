@@ -45,6 +45,7 @@ def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
         args=[bot],
         id="daily_reminder",
         replace_existing=True,
+        misfire_grace_time=300,  # run even if up to 5 min late (e.g. after restart)
     )
     scheduler.start()
     return scheduler
