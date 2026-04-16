@@ -57,8 +57,8 @@ def load_logs(habit_id: str, start: date, end: date) -> pd.DataFrame:
 TERNARY_COLOR = {0: "#2ecc71", 1: "#f1c40f", 2: "#e74c3c"}
 BOOLEAN_COLOR = {0: "#e74c3c", 1: "#2ecc71"}
 
-TERNARY_LABEL = {0: "🟢 Норм", 1: "🟡 Немного", 2: "🔴 Много"}
-BOOLEAN_LABEL = {0: "❌ Пропустил", 1: "✅ Сделал"}
+TERNARY_LABEL = {0: "🟢 OK", 1: "🟡 A bit", 2: "🔴 A lot"}
+BOOLEAN_LABEL = {0: "❌ Missed", 1: "✅ Done"}
 
 
 def value_label(habit_type: str, value: int) -> str:
@@ -115,7 +115,7 @@ def calendar_heatmap(df: pd.DataFrame, habit_type: str, title: str) -> go.Figure
         colorscale = [[0, "#e74c3c"], [1.0, "#2ecc71"]]
         zmin, zmax = 0, 1
 
-    day_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
     fig = go.Figure(
         go.Heatmap(
@@ -150,11 +150,11 @@ def trend_chart(df: pd.DataFrame, habit_type: str, title: str) -> go.Figure:
 
     if habit_type == "ternary":
         tick_vals = [0, 1, 2]
-        tick_text = ["🟢 Норм", "🟡 Немного", "🔴 Много"]
+        tick_text = ["🟢 OK", "🟡 A bit", "🔴 A lot"]
         yrange = [-0.2, 2.2]
     else:
         tick_vals = [0, 1]
-        tick_text = ["❌ Нет", "✅ Да"]
+        tick_text = ["❌ No", "✅ Yes"]
         yrange = [-0.2, 1.2]
 
     colors = [
@@ -169,7 +169,7 @@ def trend_chart(df: pd.DataFrame, habit_type: str, title: str) -> go.Figure:
             y=df["value"],
             mode="markers",
             marker=dict(color=colors, size=8),
-            name="Значение",
+            name="Value",
         )
     )
     fig.add_trace(
@@ -178,7 +178,7 @@ def trend_chart(df: pd.DataFrame, habit_type: str, title: str) -> go.Figure:
             y=df["rolling"],
             mode="lines",
             line=dict(color="#7f8c8d", width=2, dash="dot"),
-            name="Скользящее среднее (7д)",
+            name="Rolling avg (7d)",
         )
     )
     fig.update_layout(
@@ -200,30 +200,30 @@ habits_df = load_habits()
 with st.sidebar:
     st.title("📊 Habit Tracker")
 
-    show_archived = st.checkbox("Показать архивированные", value=False)
+    show_archived = st.checkbox("Show archived", value=False)
 
     st.divider()
 
     period = st.selectbox(
-        "Период",
-        ["Последние 30 дней", "Последние 90 дней", "Последние 365 дней", "Всё время"],
+        "Period",
+        ["Last 30 days", "Last 90 days", "Last 365 days", "All time"],
     )
     today = date.today()
     period_map = {
-        "Последние 30 дней": today - timedelta(days=30),
-        "Последние 90 дней": today - timedelta(days=90),
-        "Последние 365 дней": today - timedelta(days=365),
-        "Всё время": date(2000, 1, 1),
+        "Last 30 days": today - timedelta(days=30),
+        "Last 90 days": today - timedelta(days=90),
+        "Last 365 days": today - timedelta(days=365),
+        "All time": date(2000, 1, 1),
     }
     start_date = period_map[period]
 
     st.divider()
-    chart_type = st.radio("График", ["Календарь (heatmap)", "Тренд"])
+    chart_type = st.radio("Chart", ["Calendar (heatmap)", "Trend"])
 
 filtered = habits_df if show_archived else habits_df[habits_df["is_active"]]
 
 if filtered.empty:
-    st.warning("Нет привычек.")
+    st.warning("No habits.")
     st.stop()
 
 # ── Helper: render one habit card ─────────────────────────────────────────────
@@ -243,16 +243,16 @@ def render_habit(habit_row: pd.Series) -> None:
         st.subheader(name)
 
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Серия", f"{cur_streak} дн.")
-        m2.metric("Лучшая серия", f"{best_streak} дн.")
-        m3.metric("Дней заполнено", f"{len(logs)}")
-        m4.metric("Заполнено", f"{fill_rate}%")
+        m1.metric("Streak", f"{cur_streak} d.")
+        m2.metric("Best streak", f"{best_streak} d.")
+        m3.metric("Days filled", f"{len(logs)}")
+        m4.metric("Fill rate", f"{fill_rate}%")
 
         if logs.empty:
-            st.info("Нет данных за выбранный период.")
+            st.info("No data for the selected period.")
             return
 
-        if chart_type == "Календарь (heatmap)":
+        if chart_type == "Calendar (heatmap)":
             st.plotly_chart(
                 calendar_heatmap(logs, habit_type, ""),
                 use_container_width=True,
@@ -270,14 +270,14 @@ ternary_habits = filtered[filtered["type"] == "ternary"]
 boolean_habits = filtered[filtered["type"] == "boolean"]
 
 if not ternary_habits.empty:
-    st.header("🎚️ Ternary-привычки (0 / 1 / 2)")
+    st.header("🎚️ Ternary habits (0 / 1 / 2)")
     cols = st.columns(min(len(ternary_habits), 2))
     for i, (_, row) in enumerate(ternary_habits.iterrows()):
         with cols[i % 2]:
             render_habit(row)
 
 if not boolean_habits.empty:
-    st.header("✅ Boolean-привычки (да / нет)")
+    st.header("✅ Boolean habits (yes / no)")
     cols = st.columns(min(len(boolean_habits), 2))
     for i, (_, row) in enumerate(boolean_habits.iterrows()):
         with cols[i % 2]:

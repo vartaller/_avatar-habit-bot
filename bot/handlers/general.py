@@ -7,13 +7,13 @@ router = Router()
 
 HELP_TEXT = (
     "🏋️ *Habit Tracker*\n\n"
-    "*Команды:*\n"
-    "/log — заполнить привычки (сегодня или другая дата)\n"
-    "/status — что уже заполнено сегодня\n"
-    "/habits — список всех привычек\n"
-    "/add\\_habit — добавить новую привычку\n"
-    "/archive\\_habit — архивировать привычку\n"
-    "/cancel — отменить текущее действие"
+    "*Commands:*\n"
+    "/log — log habits (today or another date)\n"
+    "/status — what's already filled in today\n"
+    "/habits — list all habits\n"
+    "/add\\_habit — add a new habit\n"
+    "/archive\\_habit — archive a habit\n"
+    "/cancel — cancel the current action"
 )
 
 
@@ -27,6 +27,6 @@ async def cmd_cancel(message: Message, state: FSMContext) -> None:
     current = await state.get_state()
     await state.clear()
     if current:
-        await message.answer("❌ Отменено.")
+        await message.answer("❌ Cancelled.")
     else:
-        await message.answer("Нечего отменять.")
+        await message.answer("Nothing to cancel.")
