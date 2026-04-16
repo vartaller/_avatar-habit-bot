@@ -23,9 +23,9 @@ async def send_reminder(bot: Bot) -> None:
 
     names = "\n".join(f"• {h['name']}" for h in unfilled)
     text = (
-        "🔔 *Напоминание*\n\n"
-        f"Сегодня ещё не заполнены:\n{names}\n\n"
-        "Напиши /log чтобы заполнить."
+        "🔔 *Reminder*\n\n"
+        f"Not yet filled in today:\n{names}\n\n"
+        "Use /log to fill them in."
     )
     try:
         await bot.send_message(settings.OWNER_ID, text, parse_mode="Markdown")

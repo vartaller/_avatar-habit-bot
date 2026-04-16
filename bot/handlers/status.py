@@ -22,19 +22,19 @@ async def cmd_status(message: Message) -> None:
     logs = await db.get_day_logs(today)
     unfilled = await db.get_unfilled_habits(today)
 
-    lines: list[str] = [f"📊 *Статус на {today.strftime('%d.%m.%Y')}*\n"]
+    lines: list[str] = [f"📊 *Status for {today.strftime('%d.%m.%Y')}*\n"]
 
     if logs:
-        lines.append("*Заполнено:*")
+        lines.append("*Filled:*")
         for log in logs:
             lines.append(f"• {log['name']}: {_fmt(log['type'], log['value'])}")
 
     if unfilled:
-        lines.append("\n*Не заполнено:*")
+        lines.append("\n*Not filled:*")
         for h in unfilled:
             lines.append(f"• {h['name']}")
 
     if not logs and not unfilled:
-        lines.append("Нет активных привычек. Добавь: /add\\_habit")
+        lines.append("No active habits. Add one: /add\\_habit")
 
     await message.answer("\n".join(lines), parse_mode="Markdown")
