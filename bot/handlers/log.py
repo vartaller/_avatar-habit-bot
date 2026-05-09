@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -11,6 +11,7 @@ from aiogram.types import CallbackQuery, Message
 from bot import database as db
 from bot.keyboards import (
     BOOLEAN_LABELS,
+    BTN_LOG,
     TERNARY_LABELS,
     DateChoice,
     HabitSkip,
@@ -24,7 +25,6 @@ router = Router()
 
 class LogFlow(StatesGroup):
     choosing_date = State()
-    entering_date = State()
     logging = State()
 
 
@@ -111,34 +111,31 @@ async def _send_habit(
 
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
-@router.message(Command("log"))
-async def cmd_log(message: Message, state: FSMContext) -> None:
+async def _show_date_choice(event: Message | CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await state.set_state(LogFlow.choosing_date)
-    await message.answer("📅 Which date are we filling in?", reply_markup=date_choice_kb())
+    text = "📅 Which date are we filling in?"
+    if isinstance(event, CallbackQuery):
+        await event.message.answer(text, reply_markup=date_choice_kb())
+    else:
+        await event.answer(text, reply_markup=date_choice_kb())
 
 
-@router.callback_query(DateChoice.filter(F.action == "today"), LogFlow.choosing_date)
-async def cb_today(query: CallbackQuery, state: FSMContext) -> None:
+@router.message(Command("log"))
+async def cmd_log(message: Message, state: FSMContext) -> None:
+    await _show_date_choice(message, state)
+
+
+@router.message(F.text == BTN_LOG)
+async def btn_log(message: Message, state: FSMContext) -> None:
+    await _show_date_choice(message, state)
+
+
+@router.callback_query(DateChoice.filter(), LogFlow.choosing_date)
+async def cb_date(query: CallbackQuery, callback_data: DateChoice, state: FSMContext) -> None:
     await query.answer()
-    await _start_logging(date.today(), state, query)
-
-
-@router.callback_query(DateChoice.filter(F.action == "pick"), LogFlow.choosing_date)
-async def cb_pick_date(query: CallbackQuery, state: FSMContext) -> None:
-    await query.answer()
-    await state.set_state(LogFlow.entering_date)
-    await query.message.edit_text("📆 Enter the date in format *DD.MM.YYYY*:", parse_mode="Markdown")
-
-
-@router.message(LogFlow.entering_date)
-async def enter_date(message: Message, state: FSMContext) -> None:
-    try:
-        log_date = datetime.strptime(message.text.strip(), "%d.%m.%Y").date()
-    except ValueError:
-        await message.answer("❌ Invalid format. Try again, e.g. *08.04.2026*:", parse_mode="Markdown")
-        return
-    await _start_logging(log_date, state, message)
+    log_date = date.fromisoformat(callback_data.date_str)
+    await _start_logging(log_date, state, query)
 
 
 @router.callback_query(HabitValue.filter(), LogFlow.logging)
