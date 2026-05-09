@@ -1,6 +1,17 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from datetime import date, timedelta
+
 from aiogram.filters.callback_data import CallbackData
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+# ── Constants ─────────────────────────────────────────────────────────────────
+
+BTN_LOG = "📝 Log"
 
 # ── Value labels ─────────────────────────────────────────────────────────────
 
@@ -19,7 +30,7 @@ BOOLEAN_LABELS: dict[int, str] = {
 # ── Callback data ─────────────────────────────────────────────────────────────
 
 class DateChoice(CallbackData, prefix="date"):
-    action: str  # "today" | "pick"
+    date_str: str  # ISO date e.g. "2026-05-09"
 
 
 class HabitValue(CallbackData, prefix="hval"):
@@ -49,10 +60,23 @@ class ArchiveCancel(CallbackData, prefix="arch_no"):
 
 # ── Keyboards ─────────────────────────────────────────────────────────────────
 
+def main_kb() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=BTN_LOG)]],
+        resize_keyboard=True,
+    )
+
+
 def date_choice_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="📅 Today", callback_data=DateChoice(action="today"))
-    builder.button(text="📆 Other date", callback_data=DateChoice(action="pick"))
+    today = date.today()
+    for i in range(4):
+        d = today - timedelta(days=i)
+        label = d.strftime("%d.%m") + (" (today)" if i == 0 else "")
+        builder.button(
+            text=f"{'📅' if i == 0 else '📆'} {label}",
+            callback_data=DateChoice(date_str=d.isoformat()),
+        )
     builder.adjust(2)
     return builder.as_markup()
 
