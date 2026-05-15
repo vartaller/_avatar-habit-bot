@@ -1,11 +1,10 @@
 import logging
-from datetime import date
 
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from bot.config import settings
+from bot.config import settings, today_tz
 from bot import database as db
 
 logger = logging.getLogger(__name__)
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def send_reminder(bot: Bot) -> None:
     try:
-        unfilled = await db.get_unfilled_habits(date.today())
+        unfilled = await db.get_unfilled_habits(today_tz())
     except Exception:
         logger.exception("send_reminder: failed to fetch unfilled habits")
         return

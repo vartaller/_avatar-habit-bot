@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -15,6 +16,13 @@ st.set_page_config(
     page_icon="📊",
     layout="wide",
 )
+
+_TZ = ZoneInfo(os.environ.get("TIMEZONE", "Europe/Warsaw"))
+
+
+def today_tz() -> date:
+    return datetime.now(_TZ).date()
+
 
 # ── DB connection ─────────────────────────────────────────────────────────────
 
@@ -69,7 +77,7 @@ def value_label(habit_type: str, value: int) -> str:
 
 # ── Streak calculation ────────────────────────────────────────────────────────
 
-def compute_streaks(df: pd.DataFrame) -> tuple[int, int]:
+def compute_streaks(df: pd.DataFrame, today: date) -> tuple[int, int]:
     if df.empty:
         return 0, 0
 
@@ -77,15 +85,22 @@ def compute_streaks(df: pd.DataFrame) -> tuple[int, int]:
     date_set = set(filled)
 
     current = 0
-    d = date.today()
+    d = today
     while d in date_set:
         current += 1
         d -= timedelta(days=1)
 
+    # Best streak is calculated only over the last 30 days
+    cutoff = today - timedelta(days=30)
+    recent = [x for x in filled if x >= cutoff]
+
+    if not recent:
+        return current, current
+
     best = 1
     streak = 1
-    for i in range(1, len(filled)):
-        if (filled[i] - filled[i - 1]).days == 1:
+    for i in range(1, len(recent)):
+        if (recent[i] - recent[i - 1]).days == 1:
             streak += 1
             best = max(best, streak)
         else:
@@ -208,7 +223,7 @@ with st.sidebar:
         "Period",
         ["Last 30 days", "Last 90 days", "Last 365 days", "All time"],
     )
-    today = date.today()
+    today = today_tz()
     period_map = {
         "Last 30 days": today - timedelta(days=30),
         "Last 90 days": today - timedelta(days=90),
@@ -219,6 +234,11 @@ with st.sidebar:
 
     st.divider()
     chart_type = st.radio("Chart", ["Calendar (heatmap)", "Trend"])
+
+    st.divider()
+    if st.button("🔄 Refresh data"):
+        st.cache_data.clear()
+        st.rerun()
 
 filtered = habits_df if show_archived else habits_df[habits_df["is_active"]]
 
@@ -235,7 +255,7 @@ def render_habit(habit_row: pd.Series) -> None:
 
     logs = load_logs(habit_id, start_date, today)
 
-    cur_streak, best_streak = compute_streaks(logs)
+    cur_streak, best_streak = compute_streaks(logs, today)
     fill_rate = round(len(logs) / max((today - start_date).days, 1) * 100, 1)
     last_val = value_label(habit_type, int(logs.iloc[-1]["value"])) if not logs.empty else "—"
 
@@ -244,7 +264,7 @@ def render_habit(habit_row: pd.Series) -> None:
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Streak", f"{cur_streak} d.")
-        m2.metric("Best streak", f"{best_streak} d.")
+        m2.metric("Best streak (30d)", f"{best_streak} d.")
         m3.metric("Days filled", f"{len(logs)}")
         m4.metric("Fill rate", f"{fill_rate}%")
 

@@ -1,13 +1,16 @@
-from datetime import date
+from datetime import timedelta
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
 from bot import database as db
-from bot.keyboards import BOOLEAN_LABELS, TERNARY_LABELS
+from bot.config import today_tz
+from bot.keyboards import BOOLEAN_LABELS, BTN_VIEW, TERNARY_LABELS
 
 router = Router()
+
+_SEPARATOR = "\n━━━━━━━━━━━━━━━━━━━━\n"
 
 
 def _fmt(habit_type: str, value: int) -> str:
@@ -18,7 +21,7 @@ def _fmt(habit_type: str, value: int) -> str:
 
 @router.message(Command("status"))
 async def cmd_status(message: Message) -> None:
-    today = date.today()
+    today = today_tz()
     logs = await db.get_day_logs(today)
     unfilled = await db.get_unfilled_habits(today)
 
@@ -38,3 +41,23 @@ async def cmd_status(message: Message) -> None:
         lines.append("No active habits. Add one: /add\\_habit")
 
     await message.answer("\n".join(lines), parse_mode="Markdown")
+
+
+@router.message(F.text == BTN_VIEW)
+async def btn_view(message: Message) -> None:
+    today = today_tz()
+    blocks: list[str] = []
+
+    for i in range(4):
+        day = today - timedelta(days=i)
+        label = day.strftime("%d.%m.%Y") + (" — today" if i == 0 else "")
+        logs = await db.get_day_logs(day)
+
+        header = f"*📅 {label}*"
+        if logs:
+            rows = "\n".join(f"• {r['name']}: {_fmt(r['type'], r['value'])}" for r in logs)
+            blocks.append(f"{header}\n{rows}")
+        else:
+            blocks.append(f"{header}\n_— not filled_")
+
+    await message.answer(_SEPARATOR.join(blocks), parse_mode="Markdown")
