@@ -88,6 +88,12 @@ async def upsert_log(habit_id: str, log_date: date, value: int) -> None:
     )
 
 
+async def delete_day_logs(log_date: date) -> int:
+    pool = await get_pool()
+    result = await pool.execute("DELETE FROM habit_logs WHERE date = $1", log_date)
+    return int(result.split()[-1])
+
+
 async def get_day_logs(log_date: date) -> list[dict]:
     pool = await get_pool()
     rows = await pool.fetch(
