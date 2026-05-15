@@ -60,4 +60,5 @@ async def btn_view(message: Message) -> None:
         else:
             blocks.append(f"{header}\n_— not filled_")
 
-    await message.answer(_SEPARATOR.join(blocks), parse_mode="Markdown")
+    footer = "\n\n[📊 Open dashboard](https://avatar-habit-bot.streamlit.app)"
+    await message.answer(_SEPARATOR.join(blocks) + footer, parse_mode="Markdown")
