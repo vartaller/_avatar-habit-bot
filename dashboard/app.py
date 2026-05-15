@@ -84,9 +84,11 @@ def compute_streaks(df: pd.DataFrame, today: date, habit_type: str) -> tuple[int
     filled = sorted(pd.to_datetime(df["date"]).dt.date.tolist())
     date_set = set(filled)
 
-    # Current streak: consecutive days with any filled value
+    # Current streak: consecutive days with any filled value.
+    # Grace period: if today isn't filled yet, start from yesterday so the
+    # streak doesn't reset before the day is over.
     current = 0
-    d = today
+    d = today if today in date_set else today - timedelta(days=1)
     while d in date_set:
         current += 1
         d -= timedelta(days=1)
