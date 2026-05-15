@@ -166,7 +166,7 @@ def trend_chart(df: pd.DataFrame, habit_type: str, title: str) -> go.Figure:
     if habit_type == "ternary":
         tick_vals = [0, 1, 2]
         tick_text = ["🟢 OK", "🟡 A bit", "🔴 A lot"]
-        yrange = [-0.2, 2.2]
+        yrange = [2.2, -0.2]  # inverted: green on top, red on bottom
     else:
         tick_vals = [0, 1]
         tick_text = ["❌ No", "✅ Yes"]
