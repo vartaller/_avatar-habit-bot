@@ -1,3 +1,6 @@
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+
 from pydantic_settings import BaseSettings
 
 
@@ -14,3 +17,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def today_tz() -> date:
+    """Current date in the configured local timezone (avoids UTC drift after midnight)."""
+    return datetime.now(ZoneInfo(settings.TIMEZONE)).date()

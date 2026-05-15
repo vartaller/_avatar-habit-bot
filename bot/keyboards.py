@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta
 
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import (
@@ -9,9 +9,13 @@ from aiogram.types import (
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from bot.config import today_tz
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 BTN_LOG = "📝 Log"
+BTN_EDIT = "✏️ Edit"
+BTN_VIEW = "👁 View"
 
 # ── Value labels ─────────────────────────────────────────────────────────────
 
@@ -62,14 +66,14 @@ class ArchiveCancel(CallbackData, prefix="arch_no"):
 
 def main_kb() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=BTN_LOG)]],
+        keyboard=[[KeyboardButton(text=BTN_LOG), KeyboardButton(text=BTN_EDIT), KeyboardButton(text=BTN_VIEW)]],
         resize_keyboard=True,
     )
 
 
 def date_choice_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    today = date.today()
+    today = today_tz()
     for i in range(4):
         d = today - timedelta(days=i)
         label = d.strftime("%d.%m") + (" (today)" if i == 0 else "")
