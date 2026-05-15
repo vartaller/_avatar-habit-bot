@@ -11,6 +11,7 @@ from aiogram.types import CallbackQuery, Message
 from bot import database as db
 from bot.keyboards import (
     BOOLEAN_LABELS,
+    BTN_CLEAR,
     BTN_EDIT,
     BTN_LOG,
     TERNARY_LABELS,
@@ -127,11 +128,17 @@ async def _show_date_choice(
     event: Message | CallbackQuery,
     state: FSMContext,
     edit_mode: bool = False,
+    clear_mode: bool = False,
 ) -> None:
     await state.clear()
     await state.set_state(LogFlow.choosing_date)
-    await state.set_data({"edit_mode": edit_mode})
-    text = "📅 Which date are we filling in?" if not edit_mode else "✏️ Which date do you want to edit?"
+    await state.set_data({"edit_mode": edit_mode, "clear_mode": clear_mode})
+    if clear_mode:
+        text = "🗑 Which date do you want to clear?"
+    elif edit_mode:
+        text = "✏️ Which date do you want to edit?"
+    else:
+        text = "📅 Which date are we filling in?"
     if isinstance(event, CallbackQuery):
         await event.message.answer(text, reply_markup=date_choice_kb())
     else:
@@ -153,13 +160,28 @@ async def btn_edit(message: Message, state: FSMContext) -> None:
     await _show_date_choice(message, state, edit_mode=True)
 
 
+@router.message(F.text == BTN_CLEAR)
+async def btn_clear(message: Message, state: FSMContext) -> None:
+    await _show_date_choice(message, state, clear_mode=True)
+
+
 @router.callback_query(DateChoice.filter(), LogFlow.choosing_date)
 async def cb_date(query: CallbackQuery, callback_data: DateChoice, state: FSMContext) -> None:
     await query.answer()
     data = await state.get_data()
-    edit_mode = data.get("edit_mode", False)
     log_date = date.fromisoformat(callback_data.date_str)
-    await _start_logging(log_date, state, query, edit_mode=edit_mode)
+
+    if data.get("clear_mode"):
+        await state.clear()
+        deleted = await db.delete_day_logs(log_date)
+        date_str = log_date.strftime("%d.%m.%Y")
+        if deleted:
+            await query.message.edit_text(f"🗑 Cleared {deleted} record(s) for {date_str}.")
+        else:
+            await query.message.edit_text(f"Nothing to clear for {date_str}.")
+        return
+
+    await _start_logging(log_date, state, query, edit_mode=data.get("edit_mode", False))
 
 
 @router.callback_query(HabitValue.filter(), LogFlow.logging)

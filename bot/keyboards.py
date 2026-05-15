@@ -16,6 +16,7 @@ from bot.config import today_tz
 BTN_LOG = "📝 Log"
 BTN_EDIT = "✏️ Edit"
 BTN_VIEW = "👁 View"
+BTN_CLEAR = "🗑 Clear"
 
 # ── Value labels ─────────────────────────────────────────────────────────────
 
@@ -66,7 +67,10 @@ class ArchiveCancel(CallbackData, prefix="arch_no"):
 
 def main_kb() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=BTN_LOG), KeyboardButton(text=BTN_EDIT), KeyboardButton(text=BTN_VIEW)]],
+        keyboard=[
+            [KeyboardButton(text=BTN_LOG), KeyboardButton(text=BTN_EDIT)],
+            [KeyboardButton(text=BTN_VIEW), KeyboardButton(text=BTN_CLEAR)],
+        ],
         resize_keyboard=True,
     )
 
