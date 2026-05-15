@@ -84,24 +84,24 @@ def compute_streaks(df: pd.DataFrame, today: date, habit_type: str) -> tuple[int
     filled = sorted(pd.to_datetime(df["date"]).dt.date.tolist())
     date_set = set(filled)
 
-    # Current streak: consecutive days with any filled value.
-    # Grace period: if today isn't filled yet, start from yesterday so the
-    # streak doesn't reset before the day is over.
-    current = 0
-    d = today if today in date_set else today - timedelta(days=1)
-    while d in date_set:
-        current += 1
-        d -= timedelta(days=1)
-
-    # Best streak: consecutive days with the best value (0=green for ternary, 1=done for boolean)
+    # Both streaks track only the best value (0=green for ternary, 1=done for boolean)
     best_value = 0 if habit_type == "ternary" else 1
     best_dates = sorted(
         pd.to_datetime(df[df["value"] == best_value]["date"]).dt.date.tolist()
     )
+    best_date_set = set(best_dates)
 
     if not best_dates:
-        return current, 0
+        return 0, 0
 
+    # Current streak: consecutive best-value days ending on today or yesterday (grace period)
+    current = 0
+    d = today if today in best_date_set else today - timedelta(days=1)
+    while d in best_date_set:
+        current += 1
+        d -= timedelta(days=1)
+
+    # Best streak: longest consecutive run of best-value days in the loaded period
     best = 1
     streak = 1
     for i in range(1, len(best_dates)):
@@ -264,13 +264,14 @@ def render_habit(habit_row: pd.Series) -> None:
     fill_rate = round(len(logs) / max((today - start_date).days, 1) * 100, 1)
     last_val = value_label(habit_type, int(logs.iloc[-1]["value"])) if not logs.empty else "—"
 
+    streak_label = "🟢 Streak" if habit_type == "ternary" else "✅ Streak"
     best_label = "Best 🟢 streak" if habit_type == "ternary" else "Best ✅ streak"
 
     with st.container(border=True):
         st.subheader(name)
 
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Streak", f"{cur_streak} d.")
+        m1.metric(streak_label, f"{cur_streak} d.")
         m2.metric(best_label, f"{best_streak} d.")
         m3.metric("Days filled", f"{len(logs)}")
         m4.metric("Fill rate", f"{fill_rate}%")
