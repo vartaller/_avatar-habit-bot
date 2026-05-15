@@ -77,35 +77,38 @@ def value_label(habit_type: str, value: int) -> str:
 
 # ── Streak calculation ────────────────────────────────────────────────────────
 
-def compute_streaks(df: pd.DataFrame, today: date) -> tuple[int, int]:
+def compute_streaks(df: pd.DataFrame, today: date, habit_type: str) -> tuple[int, int]:
     if df.empty:
         return 0, 0
 
     filled = sorted(pd.to_datetime(df["date"]).dt.date.tolist())
     date_set = set(filled)
 
+    # Current streak: consecutive days with any filled value
     current = 0
     d = today
     while d in date_set:
         current += 1
         d -= timedelta(days=1)
 
-    # Best streak is calculated only over the last 30 days
-    cutoff = today - timedelta(days=30)
-    recent = [x for x in filled if x >= cutoff]
+    # Best streak: consecutive days with the best value (0=green for ternary, 1=done for boolean)
+    best_value = 0 if habit_type == "ternary" else 1
+    best_dates = sorted(
+        pd.to_datetime(df[df["value"] == best_value]["date"]).dt.date.tolist()
+    )
 
-    if not recent:
-        return current, current
+    if not best_dates:
+        return current, 0
 
     best = 1
     streak = 1
-    for i in range(1, len(recent)):
-        if (recent[i] - recent[i - 1]).days == 1:
+    for i in range(1, len(best_dates)):
+        if (best_dates[i] - best_dates[i - 1]).days == 1:
             streak += 1
             best = max(best, streak)
         else:
             streak = 1
-    best = max(best, streak, current)
+    best = max(best, streak)
 
     return current, best
 
@@ -255,16 +258,18 @@ def render_habit(habit_row: pd.Series) -> None:
 
     logs = load_logs(habit_id, start_date, today)
 
-    cur_streak, best_streak = compute_streaks(logs, today)
+    cur_streak, best_streak = compute_streaks(logs, today, habit_type)
     fill_rate = round(len(logs) / max((today - start_date).days, 1) * 100, 1)
     last_val = value_label(habit_type, int(logs.iloc[-1]["value"])) if not logs.empty else "—"
+
+    best_label = "Best 🟢 streak" if habit_type == "ternary" else "Best ✅ streak"
 
     with st.container(border=True):
         st.subheader(name)
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Streak", f"{cur_streak} d.")
-        m2.metric("Best streak (30d)", f"{best_streak} d.")
+        m2.metric(best_label, f"{best_streak} d.")
         m3.metric("Days filled", f"{len(logs)}")
         m4.metric("Fill rate", f"{fill_rate}%")
 
